@@ -19,13 +19,11 @@ export class HomeMainComponent implements OnInit, OnDestroy {
   faSearch = faSearch;
   faUser = faUser;
 
-  // ✔ 수정 1: localStorage key 이름을 'TMDb-Key'로 고정
-  apiKey: string = localStorage.getItem('TMDb-Key') || '';
-
+  apiKey: string = localStorage.getItem('TMDb-Key') || 'b4303f4fca2d461848894c447fbf6a72';
   featuredMovie: any = null;
-  popularMoviesUrl: string = '';
-  newReleasesUrl: string = '';
-  actionMoviesUrl: string = '';
+  popularMoviesUrl: string = 'b4303f4fca2d461848894c447fbf6a72';
+  newReleasesUrl: string = 'b4303f4fca2d461848894c447fbf6a72';
+  actionMoviesUrl: string = 'b4303f4fca2d461848894c447fbf6a72';
 
   private scrollListener: any;
 
@@ -46,12 +44,8 @@ export class HomeMainComponent implements OnInit, OnDestroy {
     window.removeEventListener('scroll', this.scrollListener);
   }
 
-  // ✔ 수정 2: async/await → then()으로 변경 (Angular 화면 갱신 문제 해결)
-  private loadFeaturedMovie() {
-    this.urlService.fetchFeaturedMovie(this.apiKey)
-      .then(movie => {
-        this.featuredMovie = movie;
-      });
+  private async loadFeaturedMovie() {
+    this.featuredMovie = await this.urlService.fetchFeaturedMovie(this.apiKey);
   }
 
   private initializeScrollListener() {
