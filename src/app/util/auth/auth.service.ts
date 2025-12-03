@@ -36,7 +36,7 @@ export class AuthService {
         const newUser = { id: email, password: password };
         users.push(newUser);
         localStorage.setItem('users', JSON.stringify(users));
-        observer.next();
+        observer.next(true);
         observer.complete();
       } catch (err) {
         observer.error(err);
