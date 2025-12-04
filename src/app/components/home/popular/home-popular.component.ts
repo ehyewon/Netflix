@@ -2,9 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faTh, faBars } from '@fortawesome/free-solid-svg-icons';
-import {MovieInfiniteScrollComponent} from '../../../views/views/movie-infinite-scroll.component';
-import {URLService} from '../../../util/movie/URL';
-import {MovieGridComponent} from '../../../views/views/movie-grid.component';
+import { MovieInfiniteScrollComponent } from '../../../views/views/movie-infinite-scroll.component';
+import { URLService } from '../../../util/movie/URL';
+import { MovieGridComponent } from '../../../views/views/movie-grid.component';
 
 @Component({
   selector: 'app-home-popular',
@@ -25,11 +25,7 @@ export class HomePopularComponent implements OnInit {
   apiKey = localStorage.getItem('TMDb-Key') || '';
   currentView = 'grid';
 
-  constructor(
-    private urlService: URLService
-
-  ) {
-  }
+  constructor(private urlService: URLService) { }
 
   ngOnInit(): void {
     this.disableScroll();
@@ -52,7 +48,8 @@ export class HomePopularComponent implements OnInit {
     document.body.style.overflow = 'auto';
   }
 
+  // ✔ grid에서 필요한 URL만 반환
   fetFetchURL(): string {
-    return this.urlService.getURL4PopularMovies(this.apiKey);
+    return this.urlService.getPopularMoviesURL();
   }
 }
