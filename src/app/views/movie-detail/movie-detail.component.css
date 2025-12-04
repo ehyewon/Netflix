@@ -1,0 +1,28 @@
+.detail-container {
+    display: flex;
+    gap: 40px;
+    padding: 40px;
+    color: white;
+}
+
+.poster-section img {
+    width: 350px;
+    border-radius: 12px;
+}
+
+.info-section {
+    max-width: 600px;
+}
+
+.tagline {
+    font-size: 18px;
+    font-style: italic;
+    opacity: 0.7;
+}
+
+.genres span {
+    padding: 6px 12px;
+    margin-right: 8px;
+    background: #444;
+    border-radius: 8px;
+}

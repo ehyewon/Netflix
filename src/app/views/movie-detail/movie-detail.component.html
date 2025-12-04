@@ -1,0 +1,21 @@
+<div *ngIf="movie" class="detail-container">
+
+    <div class="poster-section">
+        <img [src]="getImage(movie.poster_path)" alt="movie poster" />
+    </div>
+
+    <div class="info-section">
+        <h1>{{ movie.title }}</h1>
+        <p class="tagline">{{ movie.tagline }}</p>
+
+        <p class="overview">{{ movie.overview }}</p>
+
+        <p><strong>개봉일:</strong> {{ movie.release_date }}</p>
+        <p><strong>평점:</strong> ⭐ {{ movie.vote_average }}</p>
+
+        <div class="genres">
+            <span *ngFor="let g of movie.genres">{{ g.name }}</span>
+        </div>
+    </div>
+
+</div>
