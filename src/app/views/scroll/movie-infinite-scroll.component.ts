@@ -27,6 +27,7 @@ export class MovieInfiniteScrollComponent
     @Input() apiKey!: string;
     @Input() sortingOrder: string = 'all';
     @Input() voteEverage: number = 100;
+    @Input() keyword: string = '';
 
     @ViewChild('gridContainer') gridContainer!: ElementRef<HTMLDivElement>;
     @ViewChild('loadingTrigger') loadingTrigger!: ElementRef<HTMLDivElement>;
@@ -52,11 +53,12 @@ export class MovieInfiniteScrollComponent
     // ⭐⭐⭐ 장르/언어/평점 변경 감지 → 영화 목록 초기화 후 재검색 ⭐⭐⭐
     ngOnChanges(changes: SimpleChanges): void {
         if (
-            changes['genreCode'] && !changes['genreCode'].firstChange ||
-            changes['sortingOrder'] && !changes['sortingOrder'].firstChange ||
-            changes['voteEverage'] && !changes['voteEverage'].firstChange
+            (changes['genreCode'] && !changes['genreCode'].firstChange) ||
+            (changes['sortingOrder'] && !changes['sortingOrder'].firstChange) ||
+            (changes['voteEverage'] && !changes['voteEverage'].firstChange) ||
+            (changes['keyword'] && !changes['keyword'].firstChange)   // ⭐ 추가됨
         ) {
-            this.resetMovies(); // 필터 변경 시 다시 불러옴
+            this.resetMovies();
         }
     }
 
@@ -104,10 +106,12 @@ export class MovieInfiniteScrollComponent
 
         this.isLoading = true;
         try {
-
-            const url = this.genreCode === '0'
-                ? 'https://api.themoviedb.org/3/movie/popular'
-                : 'https://api.themoviedb.org/3/discover/movie';
+            // 🔥 검색어가 있을 경우 → 검색 API 사용
+            const url = this.keyword.trim()
+                ? 'https://api.themoviedb.org/3/search/movie'
+                : (this.genreCode === '0'
+                    ? 'https://api.themoviedb.org/3/movie/popular'
+                    : 'https://api.themoviedb.org/3/discover/movie');
 
             const params: any = {
                 api_key: this.apiKey,
@@ -115,7 +119,12 @@ export class MovieInfiniteScrollComponent
                 page: this.currentPage
             };
 
-            if (this.genreCode !== '0') {
+            // 🔍 검색어 우선 적용
+            if (this.keyword.trim()) {
+                params.query = this.keyword;
+            }
+            // 🔍 검색어 없으면 장르 적용
+            else if (this.genreCode !== '0') {
                 params.with_genres = this.genreCode;
             }
 
@@ -206,4 +215,7 @@ export class MovieInfiniteScrollComponent
     isInWishlist(movieId: number): boolean {
         return this.wishlistService.isInWishlist(movieId);
     }
+
+
 }
+

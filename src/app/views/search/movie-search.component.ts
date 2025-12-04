@@ -14,6 +14,9 @@ type DropdownKey = 'originalLanguage' | 'translationLanguage' | 'sorting';
 export class MovieSearchComponent {
   @Output() changeOptions = new EventEmitter<SearchOptions>();
 
+  // ⭐ 추가: 검색어 변경 이벤트
+  @Output() keywordChanged = new EventEmitter<string>();
+
   readonly dropdowns: Record<DropdownKey, string[]> = {
     originalLanguage: ['장르 (전체)', 'Action', 'Adventure', 'Comedy', 'Crime', 'Family'],
     translationLanguage: ['평점 (전체)', '9~10', '8~9', '7~8', '6~7', '5~6', '4~5', '4점 이하'],
@@ -54,5 +57,9 @@ export class MovieSearchComponent {
     this.changeOptions.emit(this.selectedOptions);
   }
 
+  // ⭐ 검색창 입력 시 이벤트 발생
+  onKeywordInput(event: any) {
+    const keyword = event.target.value.trim();
+    this.keywordChanged.emit(keyword);
+  }
 }
-
