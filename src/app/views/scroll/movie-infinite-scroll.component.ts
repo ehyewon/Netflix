@@ -221,10 +221,9 @@ export class MovieInfiniteScrollComponent
 
     toggleWishlist(movie: Movie): void {
         if (this.wishlistTimer) clearTimeout(this.wishlistTimer);
-        this.wishlistTimer = window.setTimeout(
-            () => this.wishlistService.toggleWishlist(movie),
-            0
-        );
+        this.wishlistTimer = window.setTimeout(() => {
+            this.wishlistService.toggleWishlist(movie);
+        }, 0);
     }
 
     isInWishlist(movieId: number): boolean {

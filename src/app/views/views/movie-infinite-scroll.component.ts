@@ -195,7 +195,7 @@ export class MovieInfiniteScrollComponent implements OnInit, OnDestroy {
     }
     this.wishlistTimer = window.setTimeout(() => {
       this.wishlistService.toggleWishlist(movie);
-    }, 800);
+    }, 0);
   }
 
   isInWishlist(movieId: number): boolean {
