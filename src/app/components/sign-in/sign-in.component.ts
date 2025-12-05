@@ -54,8 +54,7 @@ export class SignInComponent implements OnInit, OnDestroy {
     get isRegisterFormValid(): boolean {
         return !!this.registerEmail &&
             !!this.registerPassword &&
-            !!this.confirmPassword &&
-            this.acceptTerms; // ⭐ 일치 조건 제거
+            !!this.confirmPassword;   // ⭐ 약관 조건 제거
     }
 
     toggleCard() {
@@ -124,26 +123,31 @@ export class SignInComponent implements OnInit, OnDestroy {
 
 
     handleRegister() {
-
-        // 1. 이메일 형식 체크
+        // 이메일 형식 검사
         if (!this.isValidEmail(this.registerEmail)) {
             alert("올바른 이메일 형식을 입력해주세요.");
             return;
         }
 
-        // 2. 비밀번호 입력 여부 체크
+        // 비밀번호 입력 확인
         if (!this.registerPassword || !this.confirmPassword) {
             alert("비밀번호를 모두 입력해주세요.");
             return;
         }
 
-        // 3. 비밀번호 일치 여부 체크
+        // 비밀번호 일치 검사
         if (this.registerPassword !== this.confirmPassword) {
             alert("비밀번호가 일치하지 않습니다.");
             return;
         }
 
-        // 4. 회원가입 진행
+        // ⭐ 약관 동의 체크
+        if (!this.acceptTerms) {
+            alert("약관에 동의해 주세요.");
+            return;
+        }
+
+        // 회원가입 시도
         this.authService.tryRegister(this.registerEmail, this.registerPassword).subscribe({
             next: () => {
                 alert("회원가입에 성공했습니다!");
@@ -152,8 +156,6 @@ export class SignInComponent implements OnInit, OnDestroy {
             error: (err) => alert(err.message)
         });
     }
-
-
 
     private isValidEmail(email: string): boolean {
         const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
