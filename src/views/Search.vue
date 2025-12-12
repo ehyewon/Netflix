@@ -1,6 +1,5 @@
 <template>
   <div class="search-page">
-    <!-- 타이틀 -->
     <h1 class="title">🎬 영화 검색</h1>
 
     <!-- 검색 -->
@@ -24,7 +23,7 @@
       </span>
     </div>
 
-    <!-- 필터 + 초기화 -->
+    <!-- 필터 -->
     <div class="filter-row">
       <div class="filters">
         <select v-model="genre">
@@ -63,26 +62,24 @@
       />
     </div>
 
-    <!-- 🔄 로딩 애니메이션 -->
+    <!-- 로딩 -->
     <div v-if="loading" class="loading-wrap">
       <div class="spinner"></div>
-      <p class="loading-text"> Loading...</p>
+      <p class="loading-text">Loading...</p>
     </div>
 
-    <!-- TOP 버튼 -->
-    <button v-if="showTop" class="top-btn" @click="goTop">
-      TOP
-    </button>
+    <!-- TOP -->
+    <button v-if="showTop" class="top-btn" @click="goTop">TOP</button>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import axios from "axios";
 import MovieCard from "@/components/MovieCard.vue";
 import { useAuth } from "@/composables/useAuth.js";
 
-/* 상태 */
+/* ================= 상태 ================= */
 const keyword = ref("");
 const movies = ref([]);
 const baseMovies = ref([]);
@@ -91,20 +88,19 @@ const genre = ref("");
 const rating = ref("");
 const sort = ref("");
 
+const page = ref(1);
+const loading = ref(false);
+const isSearchMode = ref(false);
+const showTop = ref(false);
+
+/* ================= 최근 검색 ================= */
 const { auth } = useAuth();
 const recentKey = computed(() =>
   auth.email ? `recentKeywords_${auth.email}` : null
 );
-
 const recentKeywords = ref([]);
-const showTop = ref(false);
 
-/* 🔥 무한 스크롤 상태 */
-const page = ref(1);
-const loading = ref(false);
-const isSearchMode = ref(false);
-
-/* 장르 */
+/* ================= 장르 ================= */
 const genres = ref([
   { id: 28, name: "액션" },
   { id: 35, name: "코미디" },
@@ -114,7 +110,7 @@ const genres = ref([
   { id: 878, name: "SF" }
 ]);
 
-/* 최초 로드 */
+/* ================= 최초 로드 ================= */
 onMounted(async () => {
   await loadDiscover();
 
@@ -131,7 +127,7 @@ onUnmounted(() => {
   window.removeEventListener("scroll", handleScroll);
 });
 
-/* 🔥 discover 로드 */
+/* ================= DISCOVER ================= */
 async function loadDiscover() {
   if (loading.value) return;
   loading.value = true;
@@ -152,25 +148,11 @@ async function loadDiscover() {
 
   movies.value.push(...res.data.results);
   baseMovies.value.push(...res.data.results);
-
   page.value++;
   loading.value = false;
 }
 
-/* 검색 */
-async function searchMovies() {
-  if (!keyword.value.trim()) return;
-
-  saveRecent(keyword.value);
-
-  page.value = 1;
-  movies.value = [];
-  isSearchMode.value = true;
-
-  await loadSearch();
-}
-
-/* 🔥 검색 페이지 로드 */
+/* ================= SEARCH ================= */
 async function loadSearch() {
   if (loading.value) return;
   loading.value = true;
@@ -195,7 +177,29 @@ async function loadSearch() {
   loading.value = false;
 }
 
-/* 최근 검색어 */
+/* ================= 🔥 실시간 검색 (0초) ================= */
+watch(keyword, async (val) => {
+  page.value = 1;
+  movies.value = [];
+
+  if (!val.trim()) {
+    isSearchMode.value = false;
+    baseMovies.value = [];
+    await loadDiscover();
+    return;
+  }
+
+  isSearchMode.value = true;
+  saveRecent(val);
+  await loadSearch();
+});
+
+/* 버튼 검색 (보조) */
+function searchMovies() {
+  if (!keyword.value.trim()) return;
+}
+
+/* ================= 최근 검색 ================= */
 function saveRecent(word) {
   if (!recentKey.value) return;
 
@@ -210,10 +214,9 @@ function saveRecent(word) {
 
 function clickRecent(word) {
   keyword.value = word;
-  searchMovies();
 }
 
-/* 필터링 */
+/* ================= 필터 ================= */
 const filteredMovies = computed(() => {
   let result = movies.value
     .filter(m =>
@@ -237,19 +240,21 @@ const filteredMovies = computed(() => {
   });
 });
 
-/* 초기화 */
+/* ================= 초기화 ================= */
 function resetFilter() {
   keyword.value = "";
   genre.value = "";
   rating.value = "";
   sort.value = "";
 
-  movies.value = [...baseMovies.value];
-  page.value = Math.ceil(baseMovies.value.length / 20);
+  movies.value = [];
+  baseMovies.value = [];
+  page.value = 1;
   isSearchMode.value = false;
+  loadDiscover();
 }
 
-/* 스크롤 */
+/* ================= 스크롤 ================= */
 function handleScroll() {
   showTop.value = window.scrollY > 300;
 
@@ -266,6 +271,7 @@ function goTop() {
 }
 </script>
 
+
 <style scoped>
 .search-page {
   padding: 10px 10px 60px;
@@ -277,6 +283,9 @@ function goTop() {
   margin-bottom: 14px;
 }
 
+/* ======================
+   검색 바
+====================== */
 .search-bar {
   display: flex;
   gap: 10px;
@@ -297,6 +306,9 @@ function goTop() {
   color: white;
 }
 
+/* ======================
+   최근 검색어
+====================== */
 .recent {
   margin-top: 10px;
   display: flex;
@@ -312,10 +324,14 @@ function goTop() {
   font-size: 13px;
 }
 
+/* ======================
+   필터
+====================== */
 .filter-row {
   display: flex;
   align-items: center;
   margin-top: 18px;
+  gap: 12px;
 }
 
 .filters {
@@ -341,16 +357,19 @@ function goTop() {
   cursor: pointer;
 }
 
-/* 🔥 핵심: 6열 고정 */
+/* ======================
+   🎬 영화 그리드 (기본 PC)
+====================== */
 .movie-grid {
   margin-top: 32px;
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(6, 1fr); /* PC */
   gap: 48px;
 }
 
-
-/* 🔥 TOP 버튼 복구 */
+/* ======================
+   ⬆ TOP 버튼
+====================== */
 .top-btn {
   position: fixed;
   bottom: 40px;
@@ -364,11 +383,14 @@ function goTop() {
   z-index: 9999;
 }
 
-/* 🔄 로딩 애니메이션 */
+/* ======================
+   🔄 로딩
+====================== */
 .loading-wrap {
   width: 100%;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   margin: 40px 0 20px;
 }
 
@@ -381,18 +403,77 @@ function goTop() {
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-</style>
 .loading-text {
   margin-top: 12px;
   font-size: 14px;
   color: #aaa;
   letter-spacing: 1px;
 }
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =====================================================
+   📱 반응형 브레이크포인트
+===================================================== */
+
+/* 태블릿 */
+@media (max-width: 1199px) {
+  .movie-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 32px;
+  }
+}
+
+/* 모바일 */
+@media (max-width: 768px) {
+  .title {
+    font-size: 22px;
+  }
+
+  .search-bar {
+    flex-direction: column;
+  }
+
+  .filter-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filters {
+    flex-wrap: wrap;
+  }
+
+  .reset-btn {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .movie-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+
+  .top-btn {
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 14px;
+  }
+}
+
+/* 소형 모바일 */
+@media (max-width: 360px) {
+  .movie-grid {
+    grid-template-columns: 2fr;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+}
+</style>
 
 

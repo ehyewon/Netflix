@@ -1,9 +1,11 @@
 <template>
   <header class="header">
+    <!-- 왼쪽: 로고 + PC 메뉴 -->
     <div class="left-group">
       <div class="logo" @click="goHome">🍿 Netflix Clone</div>
 
-      <nav class="nav">
+      <!-- PC 네비 -->
+      <nav class="nav pc-nav">
         <RouterLink to="/">홈</RouterLink>
         <RouterLink to="/popular">인기</RouterLink>
         <RouterLink to="/search">검색</RouterLink>
@@ -11,44 +13,86 @@
       </nav>
     </div>
 
-    <!-- ⭐ 로그인 상태 -->
-    <div v-if="auth.isLogin" class="user-box">
-      <span class="welcome">{{ auth.email }}님, 환영합니다.</span>
+    <!-- 오른쪽 -->
+    <div class="right-group">
+      <!-- 로그인 상태 -->
+      <div v-if="auth.isLogin" class="user-box pc-only">
+        <span class="welcome">{{ auth.email }}님</span>
+        <button class="logout" @click="logoutHandler">로그아웃</button>
+      </div>
 
-      <button class="logout" @click="logoutHandler">로그아웃</button>
-    </div>
+      <!-- 로그아웃 상태 -->
+      <div v-else class="login-btn pc-only" @click="goSignIn">
+        👤
+      </div>
 
-    <!-- ⭐ 로그아웃 상태 -->
-    <div v-else class="login-btn" @click="goSignIn">
-      👤
+      <!-- 🍔 햄버거 버튼 (모바일) -->
+      <button class="hamburger" @click="toggleMenu">
+        ☰
+      </button>
     </div>
   </header>
+
+  <!-- 📱 모바일 메뉴 -->
+  <div v-if="menuOpen" class="mobile-menu">
+    <RouterLink @click="closeMenu" to="/">홈</RouterLink>
+    <RouterLink @click="closeMenu" to="/popular">인기</RouterLink>
+    <RouterLink @click="closeMenu" to="/search">검색</RouterLink>
+    <RouterLink @click="closeMenu" to="/wishlist">찜목록</RouterLink>
+
+    <hr />
+
+    <div v-if="auth.isLogin" class="mobile-user">
+      <p>{{ auth.email }}</p>
+      <button @click="logoutHandler">로그아웃</button>
+    </div>
+
+    <button v-else class="mobile-login" @click="goSignIn">
+      로그인
+    </button>
+  </div>
 </template>
 
 <script setup>
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuth } from "@/composables/useAuth.js";
 
 const router = useRouter();
-const { auth, logout } = useAuth();   // ⭐ 전역 반응형 로그인 상태
+const { auth, logout } = useAuth();
 
-// 이동 함수
+const menuOpen = ref(false);
+
+// 이동
 function goHome() {
   router.push("/");
+  menuOpen.value = false;
 }
 
 function goSignIn() {
   router.push("/signin");
+  menuOpen.value = false;
 }
 
-// 로그아웃 처리
 function logoutHandler() {
-  logout();           // ⭐ 전역 상태 초기화
+  logout();
+  menuOpen.value = false;
   router.push("/signin");
+}
+
+function toggleMenu() {
+  menuOpen.value = !menuOpen.value;
+}
+
+function closeMenu() {
+  menuOpen.value = false;
 }
 </script>
 
 <style scoped>
+/* =========================
+   헤더 기본
+========================= */
 .header {
   position: fixed;
   top: 0;
@@ -57,16 +101,15 @@ function logoutHandler() {
   height: 70px;
 
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  padding: 0 32px;
+  padding: 0 20px;
 
-  background: rgba(20, 20, 20, 0.8);
+  background: rgba(20, 20, 20, 0.85);
   backdrop-filter: blur(8px);
-
   z-index: 999;
 }
 
-/* 왼쪽 묶음: 로고 + 메뉴 */
 .left-group {
   display: flex;
   align-items: center;
@@ -77,10 +120,13 @@ function logoutHandler() {
   font-size: 22px;
   font-weight: bold;
   cursor: pointer;
-  color: #fff;
+  color: white;
 }
 
-.nav {
+/* =========================
+   PC 네비
+========================= */
+.pc-nav {
   display: flex;
   gap: 24px;
 }
@@ -96,27 +142,19 @@ a.router-link-active {
   color: white;
 }
 
-/* 로그인 버튼 */
-.login-btn {
-  margin-left: auto;
-  font-size: 26px;
-  cursor: pointer;
-  padding: 6px 12px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.12);
-  transition: 0.2s;
-}
-
-.login-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-/* 로그인 상태 박스 */
-.user-box {
-  margin-left: auto;
+/* =========================
+   오른쪽 영역
+========================= */
+.right-group {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+}
+
+.user-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .welcome {
@@ -131,10 +169,82 @@ a.router-link-active {
   border-radius: 6px;
   color: white;
   cursor: pointer;
-  font-size: 14px;
 }
 
-.logout:hover {
-  background: #f6121d;
+.login-btn {
+  font-size: 24px;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* =========================
+   🍔 햄버거 버튼
+========================= */
+.hamburger {
+  display: none;
+  font-size: 26px;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+/* =========================
+   📱 모바일 메뉴
+========================= */
+.mobile-menu {
+  position: fixed;
+  top: 70px;
+  right: 0;
+  width: 220px;
+  height: calc(100vh - 70px);
+
+  background: #141414;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+
+  z-index: 998;
+}
+
+.mobile-menu a {
+  font-size: 18px;
+}
+
+.mobile-user {
+  margin-top: auto;
+}
+
+.mobile-user p {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.mobile-user button,
+.mobile-login {
+  width: 100%;
+  padding: 10px;
+  background: #e50914;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+}
+
+/* =========================
+   📱 반응형
+========================= */
+@media (max-width: 768px) {
+  .pc-nav,
+  .pc-only {
+    display: none;
+  }
+
+  .hamburger {
+    display: block;
+  }
 }
 </style>

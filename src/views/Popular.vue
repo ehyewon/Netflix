@@ -1,37 +1,33 @@
 <template>
   <div class="popular-page">
 
-    <!-- 페이지 제목 -->
+    <!-- 제목 -->
     <h1>인기 영화</h1>
 
-    <!-- 보기 전환 버튼 -->
+    <!-- 보기 전환 -->
     <div class="view-toggle">
       <button
         :class="{ active: viewMode === 'grid' }"
         @click="setView('grid')"
-      >
-        ■
-      </button>
+      >■</button>
+
       <button
         :class="{ active: viewMode === 'scroll' }"
         @click="setView('scroll')"
-      >
-        ☰
-      </button>
+      >☰</button>
     </div>
 
-    <!-- GRID MODE -->
+    <!-- ================= GRID MODE ================= -->
     <div v-if="viewMode === 'grid'" class="grid-container">
       <div class="grid">
         <MovieCard
-          v-for="movie in movies"
+          v-for="movie in pagedMovies"
           :key="movie.id"
           :movie="movie"
           mode="wishlist"
         />
       </div>
 
-      <!-- 페이지네이션 -->
       <div class="pagination">
         <button @click="prevPage" :disabled="page === 1">이전</button>
         <span>{{ page }} / {{ totalPages }}</span>
@@ -39,7 +35,7 @@
       </div>
     </div>
 
-    <!-- SCROLL MODE -->
+    <!-- ================= SCROLL MODE ================= -->
     <div
       v-if="viewMode === 'scroll'"
       class="scroll-container"
@@ -52,11 +48,12 @@
         mode="wishlist"
       />
 
-      <div class="loading" v-if="loading">불러오는 중...</div>
-
-      <!-- TOP 버튼 -->
-      <button v-if="showTop" class="top-btn" @click="goTop">
-        ↑ TOP
+      <button
+        v-if="showTop"
+        class="top-btn"
+        @click="goTop"
+      >
+        TOP
       </button>
     </div>
 
@@ -64,18 +61,33 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick, onMounted } from "vue";
+import { ref, watch, nextTick, onMounted, onBeforeUnmount, computed } from "vue";
 import MovieCard from "@/components/MovieCard.vue";
 import { getPopular } from "@/api/movieApi";
 
-/* 보기 모드 */
+/* ===== VIEW MODE ===== */
 const viewMode = ref("grid");
 const setView = (mode) => (viewMode.value = mode);
+
+/* ===== RESPONSIVE ===== */
+const isMobile = ref(window.innerWidth <= 768);
+
+const handleResize = () => {
+  isMobile.value = window.innerWidth <= 768;
+};
+
+window.addEventListener("resize", handleResize);
 
 /* ===== GRID MODE ===== */
 const movies = ref([]);
 const page = ref(1);
 const totalPages = ref(10);
+
+const ITEMS_PER_PAGE = computed(() => (isMobile.value ? 4 : 16));
+
+const pagedMovies = computed(() => {
+  return movies.value.slice(0, ITEMS_PER_PAGE.value);
+});
 
 async function loadGridMovies() {
   movies.value = await getPopular(page.value);
@@ -92,6 +104,7 @@ function prevPage() {
   if (page.value > 1) {
     page.value--;
     loadGridMovies();
+    window.scrollTo({ top: 0 });
   }
 }
 
@@ -99,122 +112,106 @@ function prevPage() {
 const scrollMovies = ref([]);
 const scrollPage = ref(1);
 const scrollBox = ref(null);
-const loading = ref(false);
 const showTop = ref(false);
 
 async function loadScrollMovies() {
-  if (loading.value) return;
-  loading.value = true;
-
-  const newMovies = await getPopular(scrollPage.value);
-  scrollMovies.value.push(...newMovies);
-
-  loading.value = false;
-}
-
-function goTop() {
-  scrollBox.value?.scrollTo({ top: 0, behavior: "smooth" });
+  const data = await getPopular(scrollPage.value);
+  scrollMovies.value.push(...data);
 }
 
 function handleScroll() {
-  const box = scrollBox.value;
-  if (!box) return;
+  const el = scrollBox.value;
+  if (!el) return;
 
-  showTop.value = box.scrollTop > 200;
+  showTop.value = el.scrollTop > 300;
 
-  const isBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 100;
-
-  if (isBottom) {
+  if (el.scrollTop + el.clientHeight >= el.scrollHeight - 100) {
     scrollPage.value++;
     loadScrollMovies();
   }
 }
 
-/* 모드 바뀔 때 스크롤 이벤트 재설정 */
-watch(viewMode, async (mode) => {
+function goTop() {
+  scrollBox.value.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+watch(viewMode, async (mode, prev) => {
+  if (prev === "scroll") {
+    scrollBox.value?.removeEventListener("scroll", handleScroll);
+  }
+
   if (mode === "scroll") {
     await nextTick();
-    scrollBox.value?.addEventListener("scroll", handleScroll);
+    scrollBox.value.addEventListener("scroll", handleScroll);
+    if (scrollMovies.value.length === 0) {
+      loadScrollMovies();
+    }
   }
 });
 
-/* 초기 로딩 */
-onMounted(() => {
-  loadGridMovies();
-  loadScrollMovies();
+onMounted(loadGridMovies);
+
+onBeforeUnmount(() => {
+  scrollBox.value?.removeEventListener("scroll", handleScroll);
+  window.removeEventListener("resize", handleResize);
 });
 </script>
 
 <style scoped>
+/* ===== PAGE ===== */
 .popular-page {
-  padding-top: 20px; /* 기존 60 → 40으로 줄임 */
-  width: 100%;
+  padding-top: 20px;
   color: white;
-  min-height: 100vh;
 }
 
-h1 {
-  margin-left: 20px;  /* 기존 30 → 20 */
-  margin-bottom: 0px; /* 기존 20 → 10 */
-}
-
-/* 보기 모드 버튼 */
+/* ===== VIEW TOGGLE ===== */
 .view-toggle {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-right: 20px;   /* 기존 30 → 20 */
-  margin-bottom: 15px; /* 기존 20 → 15 */
+  margin: 0 20px 15px;
 }
-
-/* GRID MODE */
-.grid {
-  padding: 0 20px; /* 기존 30 → 20 */
-  margin-top: 10px; /* 기존 20 → 10 */
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    /* ⭐ 딱 2줄만 보이도록 설정 */
-  grid-auto-rows: 330px;        /* 카드 높이 */
-  max-height: calc(330px * 2 + 30px); /* 2줄 + gap */
-  overflow: hidden;
-
-  gap: 30px;
-}
-
 
 .view-toggle button {
-  width: 45px;
-  height: 45px;
+  width: 42px;
+  height: 42px;
   border-radius: 6px;
   border: none;
   background: #333;
   color: white;
+  font-size: 22px;
   cursor: pointer;
-  font-size: 24px;
 }
 
 .view-toggle .active {
   background: #e50914;
 }
 
-/* GRID MODE */
+/* ===== GRID ===== */
 .grid {
-  padding: 0 30px;
-  margin-top: 20px;
-
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* 여유 */
-  gap: 32px; /* 덜 촘촘하게 */
+  gap: 28px;
+  padding: 0 24px;
+
+  /* 🔥 반응형 컬럼 */
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
 }
 
+/* ===== PAGINATION ===== */
 .pagination {
-  margin-top: 25px;
+  margin-top: 28px;      /* 🔽 카드와 간격 늘리기 */
+  margin-bottom: 32px;   /* 🔽 아래 여백 */
   text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
 }
 
 .pagination button {
-  padding: 6px 16px;
-  margin: 0 10px;
+  padding: 10px 22px;    /* 🔥 크기 업 */
+  font-size: 15px;       /* 🔥 글자 살짝 크게 */
+  border-radius: 8px;
   background: #333;
   color: white;
   border: none;
@@ -222,42 +219,47 @@ h1 {
 }
 
 .pagination button:disabled {
-  opacity: 0.3;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
-/* SCROLL MODE */
+
+.pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ================= SCROLL MODE ================= */
 .scroll-container {
   height: 80vh;
   overflow-y: auto;
-  padding: 0 30px;
+  padding: 0 24px;
 
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 28px;
-
-  justify-items: center;    /* ⭐ 각 카드 가운데 정렬 */
-  align-items: start;        /* 위쪽 정렬 */
 }
 
-
-.loading {
-  text-align: center;
-  margin: 15px 0;
-  color: #bbb;
+/* 모바일 */
+@media (max-width: 768px) {
+  .grid,
+  .scroll-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    padding: 0 12px;
+  }
 }
 
-/* TOP 버튼 */
+/* ===== TOP BUTTON ===== */
 .top-btn {
   position: fixed;
-  bottom: 35px;
-  right: 35px;
-  padding: 12px 18px;
-  background: #e50914;
+  right: 16px;
+  bottom: 24px;
+  padding: 10px 14px;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
+  background: #e50914;
   color: white;
   cursor: pointer;
-  font-size: 16px;
 }
 </style>

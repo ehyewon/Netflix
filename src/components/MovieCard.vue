@@ -52,8 +52,11 @@ const imgUrl = computed(() =>
 </script>
 
 <style scoped>
+/* =========================
+   🎬 카드 기본 (모든 화면 공통)
+========================= */
 .movie-card {
-  width: 220px;
+  width: 100%;              /* 🔥 grid column 폭을 그대로 사용 */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -61,13 +64,15 @@ const imgUrl = computed(() =>
   cursor: pointer;
 }
 
+/* 포스터 */
 .poster {
   width: 100%;
-  height: 330px;
+  aspect-ratio: 2 / 3;      /* 🔥 반응형 핵심 */
   object-fit: cover;
   border-radius: 10px;
 }
 
+/* 검색 페이지 제목 */
 .movie-title {
   margin-top: 10px;
   font-size: 15px;
@@ -75,6 +80,7 @@ const imgUrl = computed(() =>
   color: #eee;
 }
 
+/* ❤️ 찜 아이콘 */
 .wish-icon {
   position: absolute;
   top: 8px;
@@ -84,6 +90,7 @@ const imgUrl = computed(() =>
   z-index: 5;
 }
 
+/* 찜 버튼 */
 .wish-btn {
   width: 100%;
   margin-top: 8px;
@@ -92,5 +99,23 @@ const imgUrl = computed(() =>
   border: none;
   background: #222;
   color: white;
+}
+
+/* =========================
+   📱 모바일
+========================= */
+@media (max-width: 480px) {
+  .movie-title {
+    font-size: 13px;
+  }
+}
+
+/* =========================
+   📱 태블릿
+========================= */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .movie-title {
+    font-size: 14px;
+  }
 }
 </style>

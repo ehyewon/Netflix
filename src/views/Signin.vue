@@ -193,7 +193,7 @@ async function handleLogin() {
   setTimeout(() => {
     successMsg.value = "";
     router.push("/");
-  }, 1000);
+  }, 500);
 }
 </script>
 

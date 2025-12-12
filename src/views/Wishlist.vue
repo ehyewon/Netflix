@@ -50,4 +50,31 @@ const { wishlist } = useWishlist();
   gap: 32px 28px; /* ⭐ 가로 28px / 세로 32px 간격 */
   padding-bottom: 40px;
 }
+
+.movie-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 40px;
+}
+
+@media (max-width: 1024px) {
+  .movie-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .movie-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .movie-grid {
+    grid-template-columns: repeat(2, 1fr); /* ✅ 모바일 2열 */
+    gap: 18px;
+  }
+}
+
 </style>

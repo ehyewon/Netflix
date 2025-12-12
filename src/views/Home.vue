@@ -22,17 +22,16 @@ provide("openDetail", openDetail);
 
 // API 호출
 onMounted(async () => {
-  popular.value = await getPopular();     // 인기
-  action.value = await getAction();       // 액션
-  topRated.value = await getTopRated();   // 평점 높은 영화
+  popular.value = await getPopular();
+  action.value = await getAction();
+  topRated.value = await getTopRated();
 
-  // 대표 영화는 인기 영화 첫 번째
   featured.value = popular.value[0];
 });
 </script>
 
 <template>
-  <div>
+  <div class="home">
     <!-- 메인 배너 -->
     <FeaturedMovie v-if="featured" :movie="featured" />
 
@@ -51,9 +50,40 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-div {
+/* =========================
+   기본 (PC)
+========================= */
+.home {
   background: #000;
   color: #fff;
+  min-height: 100vh;
+  padding-bottom: 60px;
+}
+
+/* =========================
+   태블릿
+========================= */
+@media (max-width: 1024px) {
+  .home {
+    padding-bottom: 40px;
+  }
+}
+
+/* =========================
+   모바일
+========================= */
+@media (max-width: 768px) {
+  .home {
+    padding-bottom: 24px;
+  }
+}
+
+/* =========================
+   소형 모바일
+========================= */
+@media (max-width: 480px) {
+  .home {
+    padding-bottom: 16px;
+  }
 }
 </style>
-
