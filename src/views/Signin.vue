@@ -1,14 +1,9 @@
 <template>
   <div class="auth-wrapper">
     <div class="card-stack">
-      <!-- 카드 전환 애니메이션 -->
       <transition name="card-slide" mode="out-in">
         <!-- 로그인 카드 -->
-        <div
-          v-if="!showSignup"
-          key="login"
-          class="auth-card login-card"
-        >
+        <div v-if="!showSignup" key="login" class="auth-card login-card">
           <h2>로그인</h2>
 
           <input v-model="loginId" placeholder="아이디(이메일)" />
@@ -28,11 +23,7 @@
         </div>
 
         <!-- 회원가입 카드 -->
-        <div
-          v-else
-          key="signup"
-          class="auth-card signup-card"
-        >
+        <div v-else key="signup" class="auth-card signup-card">
           <h2>회원가입</h2>
 
           <input v-model="signId" placeholder="아이디(이메일)" />
@@ -54,7 +45,6 @@
       </transition>
     </div>
 
-    <!-- 성공 메시지 -->
     <div v-if="successMsg" class="success-popup">
       {{ successMsg }}
     </div>
@@ -62,7 +52,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
 import { useToast } from "@/composables/useToast.js";
@@ -72,7 +62,9 @@ const router = useRouter();
 const { showToast } = useToast();
 const { login } = useAuth();
 
-/* 상태 */
+/* ===============================
+   상태
+================================ */
 const showSignup = ref(false);
 const successMsg = ref("");
 
@@ -89,22 +81,47 @@ const agree = ref(false);
 const isValidEmail = (email) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-/* 자동 로그인 */
+/* ===============================
+   🔥 자동 로그인 + 아이디 채우기
+================================ */
 onMounted(() => {
   const savedId = localStorage.getItem("savedId");
   const autoLogin = localStorage.getItem("autoLogin");
   const accounts = JSON.parse(localStorage.getItem("accounts") || "{}");
 
+  // 아이디 저장되어 있으면 input 채움
   if (savedId) {
     loginId.value = savedId;
     saveId.value = true;
   }
 
+  // 자동 로그인
   if (savedId && autoLogin === "true" && accounts[savedId]) {
-    login(savedId, true);
+    login(savedId);
     router.push("/");
   }
 });
+
+/* ===============================
+   🔥 아이디 저장 즉시 반영
+================================ */
+watch(saveId, (checked) => {
+  const savedId = localStorage.getItem("savedId");
+
+  if (checked) {
+    // 체크했을 때 → 현재 입력된 아이디 저장
+    if (loginId.value) {
+      localStorage.setItem("savedId", loginId.value);
+    }
+  } else {
+    // ❗중요: 지금 입력된 아이디가 savedId일 때만 삭제
+    if (savedId === loginId.value) {
+      localStorage.removeItem("savedId");
+      localStorage.removeItem("autoLogin");
+    }
+  }
+});
+
 
 /* 카드 전환 */
 const toggle = () => {
@@ -112,7 +129,9 @@ const toggle = () => {
   showSignup.value = !showSignup.value;
 };
 
-/* 회원가입 */
+/* ===============================
+   회원가입
+================================ */
 async function handleSignup() {
   if (!signId.value || !signPw.value || !signPw2.value) {
     showToast("모든 항목을 입력해주세요.");
@@ -162,7 +181,9 @@ async function handleSignup() {
   }, 1200);
 }
 
-/* 로그인 */
+/* ===============================
+   로그인
+================================ */
 async function handleLogin() {
   if (!loginId.value || !loginPw.value) {
     showToast("아이디와 비밀번호를 입력해주세요.");
@@ -193,7 +214,24 @@ async function handleLogin() {
     return;
   }
 
-  login(loginId.value, saveId.value);
+// 🔑 로그인 상태 저장
+login(loginId.value);
+
+// 🔥 아이디 저장 / 자동 로그인 처리 (수정)
+if (saveId.value) {
+  // 체크한 경우 → 현재 이메일을 저장
+  localStorage.setItem("savedId", loginId.value);
+  localStorage.setItem("autoLogin", "true");
+} else {
+  // ❗중요: 현재 로그인한 이메일이 savedId일 때만 제거
+  const savedId = localStorage.getItem("savedId");
+
+  if (savedId === loginId.value) {
+    localStorage.removeItem("savedId");
+    localStorage.removeItem("autoLogin");
+  }
+}
+
 
   successMsg.value = "🎉 로그인 성공!";
   setTimeout(() => {
@@ -228,7 +266,6 @@ async function handleLogin() {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
 }
 
-/* 카드 슬라이드 애니메이션 */
 .card-slide-enter-active,
 .card-slide-leave-active {
   transition: all 0.6s ease;

@@ -177,7 +177,7 @@ async function loadSearch() {
   loading.value = false;
 }
 
-/* ================= 🔥 실시간 검색 (0초) ================= */
+/* ================= ❌ 실시간 저장 제거 ================= */
 watch(keyword, async (val) => {
   page.value = 1;
   movies.value = [];
@@ -190,13 +190,19 @@ watch(keyword, async (val) => {
   }
 
   isSearchMode.value = true;
-  saveRecent(val);
   await loadSearch();
 });
 
-/* 버튼 검색 (보조) */
+/* ================= 🔥 검색 버튼 / 엔터 ================= */
 function searchMovies() {
   if (!keyword.value.trim()) return;
+
+  page.value = 1;
+  movies.value = [];
+  isSearchMode.value = true;
+
+  saveRecent(keyword.value);
+  loadSearch();
 }
 
 /* ================= 최근 검색 ================= */
@@ -214,6 +220,13 @@ function saveRecent(word) {
 
 function clickRecent(word) {
   keyword.value = word;
+
+  page.value = 1;
+  movies.value = [];
+  isSearchMode.value = true;
+
+  saveRecent(word);
+  loadSearch();
 }
 
 /* ================= 필터 ================= */
@@ -475,5 +488,4 @@ function goTop() {
   }
 }
 </style>
-
 
