@@ -1,47 +1,57 @@
 <template>
   <div class="auth-wrapper">
     <div class="card-stack">
+      <!-- 카드 전환 애니메이션 -->
+      <transition name="card-slide" mode="out-in">
+        <!-- 로그인 카드 -->
+        <div
+          v-if="!showSignup"
+          key="login"
+          class="auth-card login-card"
+        >
+          <h2>로그인</h2>
 
-      <!-- 로그인 카드 -->
-      <div v-if="!showSignup" class="auth-card login-card">
-        <h2>로그인</h2>
+          <input v-model="loginId" placeholder="아이디(이메일)" />
+          <input v-model="loginPw" type="password" placeholder="비밀번호" />
 
-        <input v-model="loginId" placeholder="아이디(이메일)" />
-        <input v-model="loginPw" type="password" placeholder="비밀번호" />
+          <label class="check-row">
+            <input type="checkbox" v-model="saveId" />
+            아이디 저장 (자동 로그인)
+          </label>
 
-        <label class="check-row">
-          <input type="checkbox" v-model="saveId" />
-          아이디 저장 (자동 로그인)
-        </label>
+          <button class="main-btn" @click="handleLogin">로그인</button>
 
-        <button class="main-btn" @click="handleLogin">로그인</button>
+          <p class="switch">
+            계정이 없으신가요?
+            <span @click="toggle">회원가입</span>
+          </p>
+        </div>
 
-        <p class="switch">
-          계정이 없으신가요?
-          <span @click="toggle">회원가입</span>
-        </p>
-      </div>
+        <!-- 회원가입 카드 -->
+        <div
+          v-else
+          key="signup"
+          class="auth-card signup-card"
+        >
+          <h2>회원가입</h2>
 
-      <!-- 회원가입 카드 -->
-      <div v-else class="auth-card signup-card">
-        <h2>회원가입</h2>
+          <input v-model="signId" placeholder="아이디(이메일)" />
+          <input v-model="signPw" type="password" placeholder="비밀번호" />
+          <input v-model="signPw2" type="password" placeholder="비밀번호 확인" />
 
-        <input v-model="signId" placeholder="아이디(이메일)" />
-        <input v-model="signPw" type="password" placeholder="비밀번호" />
-        <input v-model="signPw2" type="password" placeholder="비밀번호 확인" />
+          <label class="check-row">
+            <input type="checkbox" v-model="agree" />
+            약관에 동의하십니까? (필수)
+          </label>
 
-        <label class="check-row">
-          <input type="checkbox" v-model="agree" />
-          약관에 동의하십니까? (필수)
-        </label>
+          <button class="main-btn" @click="handleSignup">회원가입</button>
 
-        <button class="main-btn" @click="handleSignup">회원가입</button>
-
-        <p class="switch">
-          이미 계정이 있으신가요?
-          <span @click="toggle">로그인</span>
-        </p>
-      </div>
+          <p class="switch">
+            이미 계정이 있으신가요?
+            <span @click="toggle">로그인</span>
+          </p>
+        </div>
+      </transition>
     </div>
 
     <!-- 성공 메시지 -->
@@ -79,7 +89,7 @@ const agree = ref(false);
 const isValidEmail = (email) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-/* 🔥 자동 로그인 처리 (페이지 진입 시) */
+/* 자동 로그인 */
 onMounted(() => {
   const savedId = localStorage.getItem("savedId");
   const autoLogin = localStorage.getItem("autoLogin");
@@ -90,7 +100,6 @@ onMounted(() => {
     saveId.value = true;
   }
 
-  // ✅ 브라우저 재시작 시 자동 로그인
   if (savedId && autoLogin === "true" && accounts[savedId]) {
     login(savedId, true);
     router.push("/");
@@ -103,7 +112,7 @@ const toggle = () => {
   showSignup.value = !showSignup.value;
 };
 
-/* ---------------- 회원가입 ---------------- */
+/* 회원가입 */
 async function handleSignup() {
   if (!signId.value || !signPw.value || !signPw2.value) {
     showToast("모든 항목을 입력해주세요.");
@@ -132,12 +141,11 @@ async function handleSignup() {
     return;
   }
 
-  /* TMDB 인증 */
   try {
     await axios.get("https://api.themoviedb.org/3/movie/popular", {
       headers: {
-        Authorization: `Bearer ${import.meta.env.VITE_TMDB_ACCESS_TOKEN}`
-      }
+        Authorization: `Bearer ${import.meta.env.VITE_TMDB_ACCESS_TOKEN}`,
+      },
     });
   } catch {
     showToast("인증 서버 오류");
@@ -154,7 +162,7 @@ async function handleSignup() {
   }, 1200);
 }
 
-/* ---------------- 로그인 ---------------- */
+/* 로그인 */
 async function handleLogin() {
   if (!loginId.value || !loginPw.value) {
     showToast("아이디와 비밀번호를 입력해주세요.");
@@ -174,19 +182,17 @@ async function handleLogin() {
     return;
   }
 
-  /* TMDB 인증 */
   try {
     await axios.get("https://api.themoviedb.org/3/movie/popular", {
       headers: {
-        Authorization: `Bearer ${import.meta.env.VITE_TMDB_ACCESS_TOKEN}`
-      }
+        Authorization: `Bearer ${import.meta.env.VITE_TMDB_ACCESS_TOKEN}`,
+      },
     });
   } catch {
     showToast("인증 서버 오류");
     return;
   }
 
-  // ✅ 핵심: auto 여부를 login에 전달
   login(loginId.value, saveId.value);
 
   successMsg.value = "🎉 로그인 성공!";
@@ -209,6 +215,7 @@ async function handleLogin() {
 
 .card-stack {
   width: 480px;
+  perspective: 1200px;
 }
 
 .auth-card {
@@ -218,6 +225,23 @@ async function handleLogin() {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* 카드 슬라이드 애니메이션 */
+.card-slide-enter-active,
+.card-slide-leave-active {
+  transition: all 0.6s ease;
+}
+
+.card-slide-enter-from {
+  opacity: 0;
+  transform: translateX(80px) rotateY(-25deg);
+}
+
+.card-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-80px) rotateY(25deg);
 }
 
 input {
