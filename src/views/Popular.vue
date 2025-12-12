@@ -48,6 +48,12 @@
         mode="wishlist"
       />
 
+      <!-- 🔄 스크롤 로딩 -->
+      <div v-if="scrollLoading" class="scroll-loading">
+        <div class="spinner"></div>
+        <p>Loading...</p>
+      </div>
+
       <button
         v-if="showTop"
         class="top-btn"
@@ -113,10 +119,15 @@ const scrollMovies = ref([]);
 const scrollPage = ref(1);
 const scrollBox = ref(null);
 const showTop = ref(false);
+const scrollLoading = ref(false); // 🔥 추가
 
 async function loadScrollMovies() {
+  if (scrollLoading.value) return;
+
+  scrollLoading.value = true;
   const data = await getPopular(scrollPage.value);
   scrollMovies.value.push(...data);
+  scrollLoading.value = false;
 }
 
 function handleScroll() {
@@ -143,6 +154,7 @@ watch(viewMode, async (mode, prev) => {
   if (mode === "scroll") {
     await nextTick();
     scrollBox.value.addEventListener("scroll", handleScroll);
+
     if (scrollMovies.value.length === 0) {
       loadScrollMovies();
     }
@@ -192,15 +204,13 @@ onBeforeUnmount(() => {
   display: grid;
   gap: 28px;
   padding: 0 24px;
-
-  /* 🔥 반응형 컬럼 */
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
 }
 
 /* ===== PAGINATION ===== */
 .pagination {
-  margin-top: 28px;      /* 🔽 카드와 간격 늘리기 */
-  margin-bottom: 32px;   /* 🔽 아래 여백 */
+  margin-top: 28px;
+  margin-bottom: 32px;
   text-align: center;
   display: flex;
   justify-content: center;
@@ -209,8 +219,8 @@ onBeforeUnmount(() => {
 }
 
 .pagination button {
-  padding: 10px 22px;    /* 🔥 크기 업 */
-  font-size: 15px;       /* 🔥 글자 살짝 크게 */
+  padding: 10px 22px;
+  font-size: 15px;
   border-radius: 8px;
   background: #333;
   color: white;
@@ -223,12 +233,6 @@ onBeforeUnmount(() => {
   cursor: not-allowed;
 }
 
-
-.pagination button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
 /* ================= SCROLL MODE ================= */
 .scroll-container {
   height: 80vh;
@@ -238,6 +242,30 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 28px;
+}
+
+/* 🔄 SCROLL LOADING */
+.scroll-loading {
+  grid-column: 1 / -1;
+  text-align: center;
+  margin: 30px 0;
+  color: #aaa;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-top: 4px solid #e50914;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 8px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* 모바일 */
