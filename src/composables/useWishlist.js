@@ -1,58 +1,83 @@
+// src/composables/useWishlist.js
 import { ref, watch } from "vue";
 import { useAuth } from "@/composables/useAuth.js";
 
-// ⭐ 계정별 찜목록 훅
+/* ==================================
+   🔥 전역 싱글톤 상태 (중요!!)
+================================== */
+const wishlist = ref([]);   // ⭐ 여기!!!
+
 export function useWishlist() {
     const { auth } = useAuth();
 
-    // ⭐ 계정별 스토리지 key 생성 함수
+    /* ===============================
+       🔑 계정별 localStorage key
+    =============================== */
     const getKey = () => {
         return auth.email
-            ? `wishlist_${auth.email}`      // 로그인된 계정용
-            : "wishlist_guest";             // 비회원(로그아웃 상태)
+            ? `wishlist_${auth.email}`
+            : "wishlist_guest";
     };
 
-    // ⭐ 로컬스토리지 → 반응형 상태 로드
-    const wishlist = ref(loadWishlist());
-
-    function loadWishlist() {
+    /* ===============================
+       📦 localStorage 로드
+    =============================== */
+    const loadWishlist = () => {
         const data = localStorage.getItem(getKey());
-        return data ? JSON.parse(data) : [];
+        wishlist.value = data ? JSON.parse(data) : [];
+    };
+
+    /* ===============================
+       ⭐ 최초 1회 로드
+    =============================== */
+    if (wishlist.value.length === 0) {
+        loadWishlist();
     }
 
-    // ⭐ 계정 바뀌면(로그인/로그아웃) 자동으로 찜목록 다시 로드
+    /* ===============================
+       🔄 로그인/로그아웃 시 갱신
+    =============================== */
     watch(
         () => auth.email,
         () => {
-            wishlist.value = loadWishlist();
+            loadWishlist();
         }
     );
 
-    // 찜 여부 확인
+    /* ===============================
+       💾 변경 시 자동 저장
+    =============================== */
+    watch(
+        wishlist,
+        (val) => {
+            localStorage.setItem(getKey(), JSON.stringify(val));
+        },
+        { deep: true }
+    );
+
+    /* ===============================
+       ❤️ 찜 여부
+    =============================== */
     const isWishlisted = (id) => {
-        return wishlist.value.some((m) => m.id === id);
+        return wishlist.value.some(m => m.id === id);
     };
 
-    // 찜 토글 (추가 / 제거)
+    /* ===============================
+       🔥 추가 / 즉시 삭제
+    =============================== */
     const toggleWishlist = (movie) => {
-        const idx = wishlist.value.findIndex((m) => m.id === movie.id);
+        const idx = wishlist.value.findIndex(m => m.id === movie.id);
 
         if (idx === -1) {
             wishlist.value.push(movie);
         } else {
-            wishlist.value.splice(idx, 1);
+            wishlist.value.splice(idx, 1); // ⭐ 이게 즉시 반영됨
         }
-
-        // ⭐ 계정별 key로 저장
-        localStorage.setItem(getKey(), JSON.stringify(wishlist.value));
     };
-
-    const getWishlist = () => wishlist.value;
 
     return {
         wishlist,
-        getWishlist,
         toggleWishlist,
-        isWishlisted
+        isWishlisted,
     };
 }

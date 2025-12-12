@@ -2,7 +2,17 @@
 import { useWishlist } from "@/composables/useWishlist.js";
 import MovieCard from "@/components/MovieCard.vue";
 
-const { wishlist } = useWishlist();
+const { wishlist, toggleWishlist } = useWishlist();
+
+/* ===============================
+   🔥 찜 목록에서 즉시 삭제
+=============================== */
+function removeMovie(id) {
+  const movie = wishlist.value.find(m => m.id === id);
+  if (!movie) return;
+
+  toggleWishlist(movie); // ⭐ 여기서 즉시 삭제 + localStorage 반영
+}
 </script>
 
 <template>
@@ -18,6 +28,7 @@ const { wishlist } = useWishlist();
         :key="movie.id"
         :movie="movie"
         mode="wishlist"
+        @removed="removeMovie"
       />
     </div>
   </div>
@@ -42,19 +53,13 @@ const { wishlist } = useWishlist();
   opacity: 0.8;
 }
 
-/* ⭐ 찜 목록 그리드 정렬 (카드 간격 넓힘) */
+/* ⭐ 찜 목록 그리드 */
 .movie-grid {
   margin-top: 20px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* 카드 크기 통일 */
-  gap: 32px 28px; /* ⭐ 가로 28px / 세로 32px 간격 */
-  padding-bottom: 40px;
-}
-
-.movie-grid {
-  display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 40px;
+  padding-bottom: 40px;
 }
 
 @media (max-width: 1024px) {
@@ -72,9 +77,8 @@ const { wishlist } = useWishlist();
 
 @media (max-width: 480px) {
   .movie-grid {
-    grid-template-columns: repeat(2, 1fr); /* ✅ 모바일 2열 */
+    grid-template-columns: repeat(2, 1fr);
     gap: 18px;
   }
 }
-
 </style>
