@@ -48,18 +48,18 @@ Vue 3와 Vite를 사용하여 구현하였으며, 인기 영화 조회, 카테�
 
 ### 3-1. 저장소 클론
 
-~~~
+```
 git clone https://github.com/깃허브아이디/레포지토리명.git
 cd 레포지토리명
-~~~
+```
 
 ---
 
 ### 3-2. 패키지 설치
 
-~~~
+```
 npm install
-~~~
+```
 
 ---
 
@@ -67,17 +67,17 @@ npm install
 
 TMDB API Key를 발급받아 프로젝트 루트에 `.env` 파일을 생성합니다.
 
-~~~
+```
 VITE_TMDB_API_KEY=YOUR_API_KEY
-~~~
+```
 
 ---
 
 ### 3-4. 개발 서버 실행
 
-~~~
+```
 npm run dev
-~~~
+```
 
 브라우저에서 다음 주소로 접속합니다.  
 👉 http://localhost:5173
@@ -86,7 +86,7 @@ npm run dev
 
 ## 4. 프로젝트 폴더 구조
 
-~~~
+```
 src/
  ├─ api/
  │   └─ movieApi.js        # TMDB API 요청 로직
@@ -114,7 +114,7 @@ src/
  │   └─ Wishlist.vue
  ├─ App.vue
  └─ main.js
-~~~
+```
 
 ---
 
