@@ -1,23 +1,58 @@
-import { createRouter, createWebHistory } from 'vue-router';
-
-// 페이지 컴포넌트 가져오기 (아직 파일은 안 만들었지만 구조만 만들어둠)
-import HomePage from '../pages/HomePage.vue';
-import PopularPage from '../pages/PopularPage.vue';
-import SearchPage from '../pages/SearchPage.vue';
-import WishlistPage from '../pages/WishlistPage.vue';
-import LoginPage from '../pages/LoginPage.vue';
-
-const routes = [
-    { path: '/', name: 'home', component: HomePage },
-    { path: '/popular', name: 'popular', component: PopularPage },
-    { path: '/search', name: 'search', component: SearchPage },
-    { path: '/wishlist', name: 'wishlist', component: WishlistPage },
-    { path: '/login', name: 'login', component: LoginPage },
-];
+import { createRouter, createWebHistory } from "vue-router";
+import Home from "@/views/Home.vue";
+import Signin from "@/views/Signin.vue";
+import Popular from "@/views/Popular.vue";
+import Search from "@/views/Search.vue";
+import Wishlist from "@/views/Wishlist.vue";
 
 const router = createRouter({
     history: createWebHistory(),
-    routes,
+    routes: [
+        {
+            path: "/",
+            name: "Home",
+            component: Home,
+            meta: { requiresAuth: true } // 🔒 로그인 필요
+        },
+        {
+            path: "/popular",
+            component: Popular,
+            meta: { requiresAuth: true }
+        },
+        {
+            path: "/search",
+            component: Search,
+            meta: { requiresAuth: true }
+        },
+        {
+            path: "/wishlist",
+            component: Wishlist,
+            meta: { requiresAuth: true }
+        },
+        {
+            path: "/signin",
+            component: Signin
+        }
+    ]
+});
+
+/* ===============================
+   🔐 로그인 미들웨어 (라우팅 가드)
+================================ */
+router.beforeEach((to, from, next) => {
+    const isLogin = localStorage.getItem("isLogin") === "true";
+
+    // 로그인 필요한 페이지인데 로그인 안돼있으면
+    if (to.meta.requiresAuth && !isLogin) {
+        next("/signin");
+    }
+    // 로그인 상태인데 signin 접근하면 홈으로
+    else if (to.path === "/signin" && isLogin) {
+        next("/");
+    }
+    else {
+        next();
+    }
 });
 
 export default router;
