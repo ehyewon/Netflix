@@ -1,4 +1,4 @@
-# 🎬 MovieFlix (Movie Web SPA)
+# 🎬 Netflix Clone(Movie Web SPA)
 
 TMDB API를 활용한 영화 정보 기반 Single Page Application(SPA) 웹 애플리케이션입니다.  
 Vue 3와 Vite를 사용하여 구현하였으며, 인기 영화 조회, 카테고리별 영화 탐색,  
@@ -8,7 +8,7 @@ Vue 3와 Vite를 사용하여 구현하였으며, 인기 영화 조회, 카테�
 
 ## 1. 프로젝트 기본 정보
 
-- 프로젝트명: MovieFlix
+- 프로젝트명: Netflix clone
 - 개발 형태: Single Page Application (SPA)
 - 주요 기능
   - 인기 영화 / 추천 영화 조회
