@@ -11,7 +11,7 @@ function removeMovie(id) {
   const movie = wishlist.value.find(m => m.id === id);
   if (!movie) return;
 
-  toggleWishlist(movie); // ⭐ 여기서 즉시 삭제 + localStorage 반영
+  toggleWishlist(movie);
 }
 </script>
 
