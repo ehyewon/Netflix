@@ -1,146 +1,357 @@
 <template>
-  <div class="world" @click.self="close">
-    <section class="cinema" :class="{ active: entered }">
+  <div class="modal-backdrop" @click.self="close">
+    <div class="modal">
 
-      <!-- LEFT : 포스터 -->
-      <div class="visual">
-        <img :src="posterUrl" class="poster" />
-        <div class="temperature">{{ temperature }}</div>
-      </div>
+      <!-- 헤더 -->
+      <div class="header" :style="headerStyle">
+        <div class="overlay"></div>
+        <button class="close-icon" @click="close">✕</button>
 
-      <!-- RIGHT : 정보 -->
-      <div class="info">
-        <p class="tagline">{{ movie.tagline || "이 영화는 이런 분위기의 작품입니다." }}</p>
+        <div class="header-text">
+          <h1 class="title">{{ movie.title }}</h1>
 
-        <h1 class="title">{{ movie.title }}</h1>
+          <!-- ⭐ 메타 정보 -->
+          <div class="meta">
+            <span class="rating">
+              ⭐ {{ movie.vote_average?.toFixed(1) ?? "-" }}
+            </span>
+            <span class="dot">•</span>
+            <span>{{ runtimeText }}</span>
+            <span class="dot">•</span>
+            <span>{{ movie.release_date || "-" }}</span>
+          </div>
 
-        <!-- 메타 정보 -->
-        <div class="meta">
-          <span>{{ year }}</span>
-          <span>{{ runtime }}분</span>
-          <span>⭐ {{ movie.vote_average }}</span>
-        </div>
-
-        <!-- 장르 -->
-        <div class="genres">
-          <span v-for="g in genres" :key="g" class="genre">
-            {{ g }}
-          </span>
-        </div>
-
-        <p class="overview">{{ movie.overview }}</p>
-
-        <!-- 버튼 -->
-        <div class="actions">
-          <button class="primary">▶ 재생</button>
-          <button class="ghost" @click="close">현실로 돌아가기</button>
-        </div>
-
-        <!-- 관련 영화 -->
-        <div v-if="similar.length" class="related">
-          <h3>🎞 비슷한 분위기의 영화</h3>
-
-          <div class="related-row">
-            <div
-              v-for="m in similar"
-              :key="m.id"
-              class="related-card"
-              @click="selectSimilar(m)"
-            >
-              <img
-                :src="`https://image.tmdb.org/t/p/w300${m.poster_path}`"
-              />
-              <p>{{ m.title }}</p>
-            </div>
+          <!-- 🎬 장르 -->
+          <div class="genres" v-if="genres.length">
+            <span v-for="g in genres" :key="g.id">
+              {{ g.name }}
+            </span>
           </div>
         </div>
-
       </div>
-    </section>
+
+            <!-- 🎬 예고편 (줄거리 위) -->
+      <div class="trailer-top" v-if="trailerKey">
+        <iframe
+          :src="`https://www.youtube.com/embed/${trailerKey}`"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+        />
+      </div>
+
+
+      <!-- 본문 -->
+      <div class="content">
+        <p class="overview">
+          {{ movie.overview || "줄거리 정보가 없습니다." }}
+        </p>
+      </div>
+
+            <!-- 🎬 비슷한 영화 -->
+      <div class="similar" v-if="similar.length">
+        <h3 class="similar-title">비슷한 영화</h3>
+
+        <div class="similar-list">
+          <div
+            v-for="item in similar"
+            :key="item.id"
+            class="similar-card"
+            @click="selectMovie(item)"
+          >
+            <img
+              v-if="item.poster_path"
+              :src="`https://image.tmdb.org/t/p/w300${item.poster_path}`"
+              :alt="item.title"
+            />
+            <p class="similar-name">{{ item.title }}</p>
+          </div>
+        </div>
+      </div>
+      
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import axios from "axios";
+import { ref, computed } from "vue";
 
 const props = defineProps({
-  movie: Object,
-});
-const emit = defineEmits(["close"]);
-
-const entered = ref(false);
-const detail = ref(null);
-const similar = ref([]);
-
-/* =====================
-   계산 값
-===================== */
-const posterUrl = computed(() =>
-  `https://image.tmdb.org/t/p/w500${props.movie.poster_path}`
-);
-
-const temperature = computed(() =>
-  `${Math.round((props.movie.vote_average || 0) * 4)}°C`
-);
-
-const year = computed(() =>
-  props.movie.release_date?.slice(0, 4)
-);
-
-const runtime = computed(() => detail.value?.runtime || "-");
-
-const genres = computed(() =>
-  detail.value?.genres?.map(g => g.name) || []
-);
-
-/* =====================
-   API
-===================== */
-async function loadDetail() {
-  const res = await axios.get(
-    `https://api.themoviedb.org/3/movie/${props.movie.id}`,
-    {
-      params: { api_key: import.meta.env.VITE_TMDB_API_KEY, language: "ko-KR" },
-    }
-  );
-  detail.value = res.data;
-}
-
-async function loadSimilar() {
-  const res = await axios.get(
-    `https://api.themoviedb.org/3/movie/${props.movie.id}/similar`,
-    {
-      params: { api_key: import.meta.env.VITE_TMDB_API_KEY, language: "ko-KR" },
-    }
-  );
-  similar.value = res.data.results.slice(0, 10);
-}
-
-/* =====================
-   라이프사이클
-===================== */
-onMounted(async () => {
-  await loadDetail();
-  await loadSimilar();
-  setTimeout(() => (entered.value = true), 100);
+  movie: { type: Object, required: true },
+  detail: { type: Object, default: null }, // getMovieDetail 결과
+  similar: {type: Array,default: () => [],},
+  trailerKey: { type: String, default: null }, // ⭐ 추가
 });
 
-/* =====================
-   액션
-===================== */
-function close() {
-  entered.value = false;
-  setTimeout(() => emit("close"), 300);
+const emits = defineEmits(["close", "select"]);
+const close = () => emits("close");
+
+function selectMovie(movie) {
+  emits("select", movie);
 }
 
-function selectSimilar(movie) {
-  emit("close");
-  setTimeout(() => {
-    // Home.vue의 openDetail이 다시 실행됨
-    document.body.dispatchEvent(
-      new CustomEvent("open-movie", { detail: movie })
-    );
-  }, 300);
-}
+/* ✅ 러닝타임 (핵심) */
+const runtimeText = computed(() => {
+  const r = props.detail?.runtime;
+  if (!r) return "러닝타임 정보 없음";
+
+  const h = Math.floor(r / 60);
+  const m = r % 60;
+
+  return h ? `${h}시간 ${m}분` : `${m}분`;
+});
+
+/* ✅ 장르 */
+const genres = computed(() => props.detail?.genres || []);
+
+/* ✅ 헤더 배경 스타일 */
+const headerStyle = computed(() => {
+  return props.movie.backdrop_path
+    ? {
+        backgroundImage: `url(https://image.tmdb.org/t/p/original${props.movie.backdrop_path})`,
+      }
+    : {
+        backgroundColor: "#111",
+      };
+});
 </script>
+
+<style scoped>
+/* 배경 */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.78);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+/* 모달 */
+.modal {
+  width: 92%;
+  max-width: 760px;
+  background: #0f0f0f;
+  border-radius: 18px;
+  overflow: hidden;
+  color: #fff;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+  animation: modalIn .35s ease;
+}
+
+/* 헤더 */
+.header {
+  position: relative;
+  height: 360px;
+  background-size: cover;
+  background-position: center;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.25),
+    rgba(15,15,15,0.95)
+  );
+}
+
+/* 닫기 버튼 */
+.close-icon {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.55);
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* 텍스트 */
+.header-text {
+  position: absolute;
+  left: 26px;
+  bottom: 22px;
+  right: 26px;
+}
+
+.title {
+  font-size: 1.9rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  opacity: .9;
+  margin-bottom: 10px;
+}
+
+.dot {
+  opacity: .6;
+}
+
+/* 장르 */
+.genres span {
+  display: inline-block;
+  margin-right: 8px;
+  margin-bottom: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+  font-size: 0.75rem;
+}
+
+/* 본문 */
+.content {
+  padding: 26px 28px 34px;
+}
+
+.overview {
+  font-size: 0.96rem;
+  line-height: 1.75;
+  color: #d6d6d6;
+}
+
+/* 애니메이션 */
+@keyframes modalIn {
+  from { transform: translateY(40px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+/* 비슷한 영화 */
+.similar {
+  margin-top: 32px;
+}
+
+.similar-title {
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+  margin-left: 10px;
+}
+
+.similar-list {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+}
+
+.similar-list::-webkit-scrollbar {
+  display: none;
+}
+
+.similar-card {
+  width: 120px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.similar-card:hover {
+  transform: scale(1.08);
+}
+
+.similar-card img {
+  width: 100%;
+  border-radius: 8px;
+}
+
+.similar-name {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  text-align: center;
+  color: #ddd;
+}
+
+.trailer {
+  padding: 0 28px 30px;
+}
+
+.trailer-title {
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+}
+
+.trailer-wrapper {
+  padding-top: 50%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.trailer-wrapper iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 헤더 예고편 */
+
+.trailer-layer iframe {
+  width: 100%;
+  height: 100%;
+}
+
+/* 레이어 순서 */
+
+.header-text {
+  z-index: 2;
+}
+
+/* 🎬 줄거리 위 예고편 */
+.trailer {
+  padding: 0 28px 24px;
+}
+
+.trailer-title {
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+}
+
+/* 비율 유지용 wrapper */
+.trailer-wrapper {
+  position: relative;
+  width: 100%;
+  padding-top: 50%;        /* 16:9보다 살짝 작게 */
+  max-width: 720px;
+  margin: 0 auto;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+}
+
+.trailer-wrapper iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+
+/* 모바일 */
+@media (max-width: 480px) {
+  .header { height: 240px; }
+  .title { font-size: 1.4rem; }
+    .trailer {
+    padding: 0 16px 20px;
+  }
+
+  .trailer-wrapper {
+    padding-top: 56.25%; /* 모바일에선 16:9로 안정 */
+  }
+}
+
+
+</style>
+

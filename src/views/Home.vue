@@ -1,43 +1,50 @@
 <script setup>
-import { ref, onMounted, provide, watch } from "vue";
+import { ref, onMounted, provide } from "vue";
 import FeaturedMovie from "@/components/FeaturedMovie.vue";
 import MovieList from "@/components/MovieList.vue";
 import MovieDetail from "@/components/MovieDetail.vue";
 
-import { getPopular, getAction, getTopRated } from "@/api/movieApi";
+import {
+  getPopular,
+  getAction,
+  getTopRated,
+  getMovieDetail,
+  getSimilarMovies,   // ✅ 추가
+  getMovieVideos,
+} from "@/api/movieApi";
 
 // 상태
 const featured = ref(null);
 const popular = ref([]);
 const action = ref([]);
 const topRated = ref([]);
-
+const similarMovies = ref([]);
+const trailerKey = ref(null);
 const selectedMovie = ref(null);
+const movieDetail = ref(null); // ✅ 상세 정보 상태
 
-/* =========================
-   🔥 상세페이지 열기 (연출 진입)
-========================= */
-function openDetail(movie) {
+// 🔥 상세 모달 열기 (수정 핵심)
+async function openDetail(movie) {
   selectedMovie.value = movie;
+
+  // ✅ 상세 API 호출 (러닝타임 여기서 옴)
+  movieDetail.value = await getMovieDetail(movie.id);
+  similarMovies.value = await getSimilarMovies(movie.id);
+    // 🎬 예고편
+  const videos = await getMovieVideos(movie.id);
+  const trailer = videos.find(
+    v => v.type === "Trailer" && v.site === "YouTube"
+  );
+
+  trailerKey.value = trailer ? trailer.key : null;
+
+
+  console.log("runtime:", movieDetail.value.runtime); // 108 찍혀야 정상
 }
 provide("openDetail", openDetail);
 
-/* =========================
-   🔥 상세 열릴 때 스크롤 잠금
-========================= */
-watch(selectedMovie, (val) => {
-  if (val) {
-    document.body.style.overflow = "hidden";
-  } else {
-    document.body.style.overflow = "";
-  }
-});
-
 // API 호출
 onMounted(async () => {
-    document.body.addEventListener("open-movie", (e) => {
-    selectedMovie.value = e.detail;
-  });
   popular.value = await getPopular();
   action.value = await getAction();
   topRated.value = await getTopRated();
@@ -56,51 +63,24 @@ onMounted(async () => {
     <MovieList title="⭐ 평점 높은 영화" :movies="topRated" />
     <MovieList title="💥 액션 영화" :movies="action" />
 
-    <!-- 🔥 상세 페이지 (연출형) -->
+    <!-- 🔥 상세 모달 -->
     <MovieDetail
-      v-if="selectedMovie"
-      :key="selectedMovie.id"  
+      v-if="selectedMovie && movieDetail"
       :movie="selectedMovie"
+      :detail="movieDetail"
+      :similar="similarMovies"
+      :trailer-key="trailerKey"
       @close="selectedMovie = null"
+      @select="openDetail"
     />
   </div>
 </template>
 
 <style scoped>
-/* =========================
-   기본 (PC)
-========================= */
 .home {
   background: #000;
   color: #fff;
   min-height: 100vh;
   padding-bottom: 60px;
-}
-
-/* =========================
-   태블릿
-========================= */
-@media (max-width: 1024px) {
-  .home {
-    padding-bottom: 40px;
-  }
-}
-
-/* =========================
-   모바일
-========================= */
-@media (max-width: 768px) {
-  .home {
-    padding-bottom: 24px;
-  }
-}
-
-/* =========================
-   소형 모바일
-========================= */
-@media (max-width: 480px) {
-  .home {
-    padding-bottom: 16px;
-  }
 }
 </style>
